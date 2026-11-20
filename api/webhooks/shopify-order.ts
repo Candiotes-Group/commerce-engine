@@ -57,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const orderNumber: string = order.name ?? String(order.order_number ?? '');
     const total: string = order.total_price ?? '';
+    const orderStatusUrl: string | null = order.order_status_url ?? null;
 
     await sendWhatsAppTemplate(
       client.whatsapp_phone_number_id,
@@ -72,6 +73,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             { type: 'text', text: total },
           ],
         },
+        // Fills the template's "Track my order" URL button. The template's
+        // base URL (set when it was created in Meta Business Manager) is
+        // https://<deployment>/track/<slug>/ — this is just the suffix, the
+        // Shopify order id, which /api/track looks up in the orders table.
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [{ type: 'text', text: String(order.id) }],
+        },
       ]
     );
 
@@ -82,6 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         shopify_order_id: String(order.id),
         customer_phone: phone,
         status: 'confirmed',
+        order_status_url: orderStatusUrl,
       },
       { onConflict: 'client_id,shopify_order_id' }
     );

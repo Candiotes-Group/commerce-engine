@@ -72,13 +72,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             { type: 'text', text: trackingUrl },
           ],
         },
+        // Same "Track my order" button as the confirmation template — once
+        // this fires, /api/track for this order starts resolving to the
+        // real courier tracking_url instead of the Shopify order-status page.
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [{ type: 'text', text: String(fulfillment.order_id) }],
+        },
       ]
     );
 
     const supabase = getSupabase();
     await supabase
       .from('orders')
-      .update({ status: 'shipped', tracking_number: trackingNumber })
+      .update({ status: 'shipped', tracking_number: trackingNumber, tracking_url: trackingUrl || null })
       .eq('client_id', client.id)
       .eq('shopify_order_id', String(fulfillment.order_id));
 

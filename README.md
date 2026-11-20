@@ -34,9 +34,11 @@ redeploy.
 api/webhooks/whatsapp.ts            - incoming WhatsApp messages (GET = Meta verification, POST = messages)
 api/webhooks/shopify-order.ts       - Shopify "orders/create" -> WhatsApp order confirmation
 api/webhooks/shopify-fulfillment.ts - Shopify "fulfillments/create" -> WhatsApp shipping update
+api/track/[client]/[orderId].ts     - the "Track my order" button's destination (302 redirect)
 api/health.ts                       - GET /api/health sanity check
 lib/                                 - shared code every webhook calls into
 supabase/schema.sql                  - run once in the Supabase SQL editor
+supabase/add-tracking-columns.sql    - run once, adds the columns the track button needs
 supabase/onboard-client.example.sql  - copy, fill in, run per new client
 ```
 
@@ -47,6 +49,8 @@ supabase/onboard-client.example.sql  - copy, fill in, run per new client
 - Open your Supabase project > SQL Editor > New query
 - Paste and run `supabase/schema.sql`
 - That creates `clients`, `conversations`, `messages`, `orders`
+- Also paste and run `supabase/add-tracking-columns.sql` (adds `orders.order_status_url`
+  and `orders.tracking_url`, used by the "Track my order" template button below)
 
 ### 2. Vercel
 
@@ -77,8 +81,18 @@ supabase/onboard-client.example.sql  - copy, fill in, run per new client
      `shopify_webhook_secret` column
 4. In Meta Business Manager, create and get approval for two message
    templates (names must match what you put in `order_confirmation_template`
-   and `shipping_update_template`), each with two body variables
-   (order number + total; tracking number + tracking link).
+   and `shipping_update_template`), category **Utility**, each with two body
+   variables (order number + total; tracking number + tracking link).
+5. Give each template a **URL button** ("Track my order" or similar), type
+   **Dynamic**, base URL `https://<your-vercel-url>/api/track/<slug>/` with
+   the variable as the suffix. WhatsApp template buttons only support a
+   variable *suffix* on a fixed base — not Shopify's own order-status or
+   courier tracking links, which vary in their whole path — so the button
+   always points at `/api/track/<slug>/<shopify-order-id>`, which looks up
+   and 302-redirects to whichever real link applies right now (the courier
+   tracking URL once shipped, otherwise the Shopify order-status page).
+   Changing a template's buttons after submission means resubmitting for
+   Meta review, so get this right before you submit.
 
 ### 4. Handing a conversation to a human
 

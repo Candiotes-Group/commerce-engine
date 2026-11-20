@@ -2,6 +2,11 @@ const GRAPH_VERSION = 'v21.0';
 
 interface TemplateComponent {
   type: 'body' | 'header' | 'button';
+  // Required by the Graph API on a button component (identifies which
+  // template button this fills in, and that it's the URL-suffix kind) —
+  // irrelevant for body/header components, so left optional.
+  sub_type?: 'url';
+  index?: string;
   parameters: Array<{ type: 'text'; text: string }>;
 }
 
