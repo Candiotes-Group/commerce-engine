@@ -104,3 +104,5 @@ vercel dev
 Needs a `.env.local` with the same variables as `.env.example`. Meta and
 Shopify can't reach `localhost` directly — use `vercel dev` with a tunnel,
 or just test against a deployed preview URL.
+
+<!-- trigger initial Vercel deployment -->
