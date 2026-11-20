@@ -53,7 +53,7 @@ supabase/onboard-client.example.sql  - copy, fill in, run per new client
 - Import this repo into Vercel (New Project > pick `Candiotes-Group/commerce-engine`)
 - Under Project Settings > Environment Variables, set (see `.env.example`):
   - `ANTHROPIC_API_KEY`
-  - `ANTHROPIC_MODEL` (optional, defaults to `claude-sonnet-4-5`)
+  - `ANTHROPIC_MODEL` (optional, defaults to `claude-sonnet-5-5`)
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY` (the **service role** key, not `anon` — Settings > API in Supabase)
   - `WHATSAPP_VERIFY_TOKEN` (make one up — any random string; every client's
