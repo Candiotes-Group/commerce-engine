@@ -46,29 +46,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Meta requires a fast 200 regardless of what happens downstream, or it
-  // will retry (and eventually stop sending webhooks altogether).
-  res.status(200).send('EVENT_RECEIVED');
-
+  // IMPORTANT: do all the work before responding. Vercel can freeze/tear
+  // down a serverless function right after the HTTP response is sent, so
+  // responding early and then "continuing in the background" is not safe
+  // here — it silently drops everything after the response. Our full
+  // pipeline (Supabase lookups + one Claude call + a WhatsApp send) is a
+  // couple of seconds at most, well inside what Meta tolerates before it
+  // would consider retrying.
   try {
     const value = payload?.entry?.[0]?.changes?.[0]?.value;
     const phoneNumberId = value?.metadata?.phone_number_id;
-    if (!phoneNumberId) return; // not a message event we care about
+    if (!phoneNumberId) {
+      res.status(200).send('EVENT_RECEIVED');
+      return;
+    }
 
     const client = await getClientByPhoneNumberId(phoneNumberId);
     if (!client) {
       console.error('No client configured for phone_number_id', phoneNumberId);
+      res.status(200).send('EVENT_RECEIVED');
       return;
     }
 
     const signature = req.headers['x-hub-signature-256'] as string | undefined;
     if (!verifyMetaSignature(rawBody, signature, client.meta_app_secret)) {
       console.error('Invalid webhook signature for client', client.slug);
+      res.status(200).send('EVENT_RECEIVED');
       return;
     }
 
     const messages = value?.messages;
-    if (!messages?.length) return; // a status update (delivered/read), not a message
+    if (!messages?.length) {
+      // a status update (delivered/read), not a message
+      res.status(200).send('EVENT_RECEIVED');
+      return;
+    }
 
     for (const msg of messages) {
       const from: string = msg.from;
@@ -101,7 +113,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await sendWhatsAppText(client.whatsapp_phone_number_id, client.whatsapp_access_token, from, reply);
       await saveMessage(conversation.id, 'bot', reply);
     }
+
+    res.status(200).send('EVENT_RECEIVED');
   } catch (err) {
     console.error('whatsapp webhook error', err);
+    // Still 200 — Meta retries aggressively on non-200, and a retry here
+    // would mean re-processing (and possibly double-replying to) the same
+    // message rather than fixing whatever actually went wrong.
+    res.status(200).send('EVENT_RECEIVED');
   }
 }

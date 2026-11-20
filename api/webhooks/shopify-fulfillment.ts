@@ -35,19 +35,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  res.status(200).send('OK');
-
+  // Do all the work before responding — see the comment in
+  // api/webhooks/whatsapp.ts for why "respond early, keep working after" is
+  // not safe on Vercel.
   try {
     const fulfillment = JSON.parse(rawBody.toString('utf8'));
     const rawPhone: string | undefined = fulfillment?.destination?.phone;
     if (!rawPhone) {
       console.error('Fulfillment has no phone number, cannot WhatsApp it', fulfillment?.id);
+      res.status(200).send('OK');
       return;
     }
     const phone = normalizePhone(rawPhone);
 
     if (!client.shipping_update_template) {
       console.error('No shipping_update_template configured for client', slug);
+      res.status(200).send('OK');
       return;
     }
 
@@ -78,7 +81,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({ status: 'shipped', tracking_number: trackingNumber })
       .eq('client_id', client.id)
       .eq('shopify_order_id', String(fulfillment.order_id));
+
+    res.status(200).send('OK');
   } catch (err) {
     console.error('shopify-fulfillment webhook error', err);
+    res.status(200).send('OK');
   }
 }

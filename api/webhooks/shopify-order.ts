@@ -36,20 +36,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Ack Shopify immediately; it retries aggressively on anything but a fast 200.
-  res.status(200).send('OK');
-
+  // Do all the work before responding — see the comment in
+  // api/webhooks/whatsapp.ts for why "respond early, keep working after" is
+  // not safe on Vercel.
   try {
     const order = JSON.parse(rawBody.toString('utf8'));
     const rawPhone: string | undefined = order?.customer?.phone || order?.shipping_address?.phone;
     if (!rawPhone) {
       console.error('Order has no phone number, cannot WhatsApp it', order?.id);
+      res.status(200).send('OK');
       return;
     }
     const phone = normalizePhone(rawPhone);
 
     if (!client.order_confirmation_template) {
       console.error('No order_confirmation_template configured for client', slug);
+      res.status(200).send('OK');
       return;
     }
 
@@ -83,7 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       { onConflict: 'client_id,shopify_order_id' }
     );
+
+    res.status(200).send('OK');
   } catch (err) {
     console.error('shopify-order webhook error', err);
+    res.status(200).send('OK');
   }
 }
