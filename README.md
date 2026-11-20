@@ -4,6 +4,18 @@ Candiotes Group's multi-tenant WhatsApp commerce bot. One deployment, one
 database, every client (Belora first) added as a row of config — not as a
 new deployment or a new codebase.
 
+**This repo is public on purpose.** Vercel's free Hobby plan doesn't support
+connecting to a *private* repo owned by a GitHub organisation — that
+combination silently breaks auto-deploy on every push, which is how we found
+this out. Keeping the repo public avoids paying for Vercel Pro. This is safe
+because no real credential ever belongs in this repo: `.env.example` holds
+only empty placeholders, and every actual secret (WhatsApp tokens, the Meta
+app secret, Supabase keys, Shopify webhook secrets) lives in Vercel
+environment variables and the Supabase `clients` table, set directly in
+their dashboards — never committed, never pasted into a file here. Keep it
+that way; the SQL templates in `supabase/` are examples for the same reason.
+If the repo ever needs to go private again, budget for Vercel Pro first.
+
 ## What it does
 
 - Answers customer WhatsApp messages using Claude, in that client's brand
