@@ -93,8 +93,19 @@ supabase/onboard-client.example.sql  - copy, fill in, run per new client
      `shopify_webhook_secret` column
 4. In Meta Business Manager, create and get approval for two message
    templates (names must match what you put in `order_confirmation_template`
-   and `shipping_update_template`), category **Utility**, each with two body
-   variables (order number + total; tracking number + tracking link).
+   and `shipping_update_template`), category **Utility**:
+   - `order_confirmation`: three body variables, in this order —
+     `{{1}}` order number, `{{2}}` total, `{{3}}` customer first name
+     (falls back to the shipping/billing address name, then "there", for a
+     guest checkout with no name on the order).
+   - `shipping_update`: two body variables — `{{1}}` tracking number,
+     `{{2}}` tracking link.
+   - A template's variables are matched by *number*, not by where they sit
+     in the body text — if you reorder the wording (e.g. put `{{3}}` before
+     `{{1}}`), the webhook code still needs to send its parameters array in
+     `{{1}}, {{2}}, {{3}}` order, so tell me if you change the variable
+     count or meaning on either template rather than just the wording
+     around them.
 5. Give each template a **URL button** ("Track my order" or similar), type
    **Dynamic**, base URL `https://<your-vercel-url>/api/track/<slug>/` with
    the variable as the suffix. WhatsApp template buttons only support a

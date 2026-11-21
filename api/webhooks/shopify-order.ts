@@ -58,6 +58,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const orderNumber: string = order.name ?? String(order.order_number ?? '');
     const total: string = order.total_price ?? '';
     const orderStatusUrl: string | null = order.order_status_url ?? null;
+    // {{3}} in the template — a guest checkout (no order.customer) still has
+    // a shipping/billing address, so fall back through those before giving
+    // up and using a generic greeting.
+    const customerFirstName: string =
+      order.customer?.first_name ||
+      order.shipping_address?.first_name ||
+      order.billing_address?.first_name ||
+      'there';
 
     await sendWhatsAppTemplate(
       client.whatsapp_phone_number_id,
@@ -71,6 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           parameters: [
             { type: 'text', text: orderNumber },
             { type: 'text', text: total },
+            { type: 'text', text: customerFirstName },
           ],
         },
         // Fills the template's "Track my order" URL button. The template's
