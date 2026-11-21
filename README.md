@@ -98,8 +98,9 @@ supabase/onboard-client.example.sql  - copy, fill in, run per new client
      `{{1}}` order number, `{{2}}` total, `{{3}}` customer first name
      (falls back to the shipping/billing address name, then "there", for a
      guest checkout with no name on the order).
-   - `shipping_update`: two body variables — `{{1}}` tracking number,
-     `{{2}}` tracking link.
+   - `shipping_update`: three body variables — `{{1}}` tracking number,
+     `{{2}}` tracking link, `{{3}}` customer first name (from the
+     fulfillment's shipping address, "there" if it has none).
    - A template's variables are matched by *number*, not by where they sit
      in the body text — if you reorder the wording (e.g. put `{{3}}` before
      `{{1}}`), the webhook code still needs to send its parameters array in

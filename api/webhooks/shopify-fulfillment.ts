@@ -57,6 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const trackingNumber: string = fulfillment.tracking_number ?? 'N/A';
     const trackingUrl: string =
       fulfillment.tracking_url ?? (Array.isArray(fulfillment.tracking_urls) ? fulfillment.tracking_urls[0] : '') ?? '';
+    // {{3}} in the template — the fulfillment payload's "destination" is the
+    // shipping address, which carries first_name/last_name directly.
+    const customerFirstName: string = fulfillment.destination?.first_name || 'there';
 
     await sendWhatsAppTemplate(
       client.whatsapp_phone_number_id,
@@ -70,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           parameters: [
             { type: 'text', text: trackingNumber },
             { type: 'text', text: trackingUrl },
+            { type: 'text', text: customerFirstName },
           ],
         },
         // Same "Track my order" button as the confirmation template — once
